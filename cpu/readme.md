@@ -4,10 +4,7 @@
 
 ## memory
 
-| range        | description |
-| ------------ | ----------- |
-| `0~4096`B    | memory      |
-| `4096~8192`B | io          |
+memory range: 16 KB
 
 ## example code
 

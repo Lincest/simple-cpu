@@ -37,7 +37,7 @@ class Compiler:
             'movil': op_coder(-1, self.movil_resolver)
         }
 
-    def __call__(self, file_path, std_out=True):
+    def __call__(self, file_path, output_path):
         with open(file_path, 'r') as file:
             # parse each line
             for line in file.readlines():
@@ -69,17 +69,10 @@ class Compiler:
                 log("relocate pc=%d (label=%s on %d) -> code: [0x%x]" % (r.pc, r.label, self.labels[r.label], code))
 
             # written in stdout
-            if std_out:
-                of = os.fdopen(sys.stdout.fileno(), "wb")
-                assert of
+            with open(output_path, 'wb') as of:
                 for i in range(0, self.pc):
                     log('write output %s' % self.output_buffer[i].to_bytes(4, 'little', signed=False))
                     of.write(self.output_buffer[i].to_bytes(4, 'little', signed=False))
-            else:
-                with open('./asm.o', 'wb') as of:
-                    for i in range(0, self.pc):
-                        log('write output %s' % self.output_buffer[i].to_bytes(4, 'little', signed=False))
-                        of.write(self.output_buffer[i].to_bytes(4, 'little', signed=False))
 
             log("success!")
 
@@ -201,8 +194,9 @@ class Compiler:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        log("usage: %s <input.s>" % (sys.argv[0]), should_exit=True)
+    if len(sys.argv) != 3:
+        log("usage: python %s <input.s> <output.o>" % (sys.argv[0]), should_exit=True)
     file_path = sys.argv[1]
+    output_path = sys.argv[2]
     compiler = Compiler()
-    compiler(file_path, std_out=False)
+    compiler(file_path, output_path)

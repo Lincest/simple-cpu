@@ -13,9 +13,8 @@ class Cpu:
         self.pc = 0
         self.register = 12 * [0]  # r1 ~ r12 (int saved)
         self.state = 0
-        self.memory = None  # memory
-        self.memory_range = (0, 8 * 1024)  # the memory space (8KB)
-        self.space_range = (0, 16 * 1024)  # the space range (16KB)
+        self.memory = bytearray(16 * 1024)  # 16KB memory
+        self.memory_range = (0, 16 * 1024)  # the space range (16KB)
         self.instructions = [  # instructions
             self._nop,
             self._load,
@@ -28,15 +27,11 @@ class Cpu:
         ]
 
     # load program (file after assembler compilation)
-    def load_file(self, file_path):
-        with open(file_path, 'rb') as f:
-            self.memory = bytearray(f.read())
-            i = 0
-            while i < len(self.memory):
-                data = int.from_bytes(self.memory[i:i + 4], 'little', signed=False)
-                print('memory[%d] = %d (0x%x)' % (i, data, data))
-                i += 4
-            print('memory = ', self.memory)
+    def load_file(self, path):
+        with open(path, 'rb') as f:
+            code = bytearray(f.read())
+            self.memory[0:len(code)] = code
+            log("memory size = %d" % len(self.memory))
             if len(self.memory) > self.memory_range[1]:
                 raise RuntimeError('memory limit exceed')
 
@@ -71,12 +66,12 @@ class Cpu:
     def _load(self, ins: list):
         tr, sr = ins[1], ins[2]
         address = self.register[sr]
-        if address < self.space_range[0] or address > self.space_range[1]:
+        if address < self.memory_range[0] or address > self.memory_range[1]:
             log("segment fault, address = 0x%x" % address, should_exit=True)
 
-        data = self.memory[address:address + 4]
+        data = self.memory[address:address+4]
         self.register[tr] = int.from_bytes(data, 'little', signed=False)
-        log("load from memory[r%d = 0x%x] = 0x%x -> r%d" % (sr, address, self.register[tr], tr))
+        log("load from memory[r%d = 0x%x] = 0x%x (%d) -> r%d" % (sr, address, self.register[tr], self.register[tr], tr))
         self.pc_next()
 
     def _movi(self, ins: list):
@@ -90,8 +85,8 @@ class Cpu:
         tr, sr = ins[1], ins[2]
         address = self.register[tr]
         data = self.register[sr].to_bytes(4, 'little', signed=False)
-        self.memory[address:address + 4] = data
-        log("store from r%d = 0x%x to memory[r%d = 0x%x]" % (sr, self.register[sr], tr, address))
+        self.memory[address:address+4] = data
+        log("store from r%d = 0x%x (%d) to memory[r%d = 0x%x]" % (sr, self.register[sr], self.register[sr], tr, address))
         self.pc_next()
 
     def _inc(self, ins: list):

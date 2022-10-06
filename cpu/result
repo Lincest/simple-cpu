@@ -1,0 +1,15 @@
+memory size = 16384
+mov imme = 0 to r1
+mov imme = 4096 to r3
+mov imme = 40 to r2
+load from memory[r2 = 0x28] = 0x14 (20) -> r4
+store from r4 = 0x14 (20) to memory[r3 = 0x1000]
+load from memory[r3 = 0x1000] = 0x14 (20) -> r5
+r2 += 1 = 41
+compare r5 = 20 with 20, now r15 = 0x0
+load from memory[r2 = 0x29] = 0x1e000000 (503316480) -> r4
+store from r4 = 0x1e000000 (503316480) to memory[r3 = 0x1000]
+load from memory[r3 = 0x1000] = 0x1e000000 (503316480) -> r5
+r2 += 1 = 42
+compare r5 = 503316480 with 20, now r15 = 0x1
+cpu halt
