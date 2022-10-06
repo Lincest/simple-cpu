@@ -36,5 +36,3 @@
 | `jnzl`  | `jnzl <name>` jump to label                 |
 | `movil` | `movil r1 <label>`  save label's addr to r1 |
 | `data`  | `data <number>` immediate numbers space     |
-
-k

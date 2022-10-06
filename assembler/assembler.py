@@ -29,7 +29,8 @@ class Compiler:
             'inc': op_coder(4, self.tr_nop_resolver),
             'cmpi': op_coder(5, self.tr_im_resolver),
             'jnz': op_coder(6, self.nop_im_resolver),
-            'data': op_coder(-1, self.data_resolver)
+            'data': op_coder(-1, self.data_resolver),
+            'label': op_coder(-1, self.label_resolver)
         }
 
     @staticmethod
@@ -117,6 +118,12 @@ class Compiler:
         immediate_number = self.get_immediate_number(ops[0])
         self.make_instruction_3(no, 0, immediate_number)
 
+    # e.g. data 0x23 0x35 0x1234 1223 -7766 ...
     def data_resolver(self, ops: list):
         for i in ops:
-            self.append_output(int(i, 0))  # fixme: any problems?
+            self.append_output(int(i, 0))  # fixme: how to/should we keep little endian
+
+    # e.g. label loop
+    def label_resolver(self, ops: list):
+        name = ops[0]
+        self.labels[name] = self.pc  # current location
