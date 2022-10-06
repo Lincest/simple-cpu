@@ -12,7 +12,7 @@ class TestAssembler(unittest.TestCase):
         return buffer
 
     def test_load(self):
-        self.compiler('./resource/test_load.s', std_out=False)
+        self.compiler('./resource/test_load.s', './resource/test_load.o')
         ans = self.check_output()
         self.assertEqual(ans[0], b'\x01\x01\x02\x00')
 
