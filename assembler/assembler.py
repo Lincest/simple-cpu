@@ -3,12 +3,12 @@ import os
 from collections import namedtuple
 from typing import List
 
-relocate_vec = namedtuple('relocate_vec', ['pc', 'op', 'tr', 'label', 'relative_addr'])
+relocate_vec = namedtuple('relocate_vec', ['pc', 'op', 'tr', 'label', 'abs'])
 op_coder = namedtuple('coder', ['no', 'func'])
-place_holder = 0xffffffff
+place_holder = 0x0
 
 
-def log_err(msg, should_exit=False):
+def log(msg, should_exit=False):
     sys.stderr.write(msg)
     sys.stderr.write("\n")
     if should_exit:
@@ -29,6 +29,7 @@ class Compiler:
             'inc': op_coder(4, self.tr_nop_resolver),
             'cmpi': op_coder(5, self.tr_im_resolver),
             'jnz': op_coder(6, self.nop_im_resolver),
+            'halt': op_coder(7, self.nop_resolver),
             # pseudo
             'data': op_coder(-1, self.data_resolver),
             'label': op_coder(-1, self.label_resolver),
@@ -43,7 +44,7 @@ class Compiler:
                 line = line.strip()
                 if not line or line.startswith('#'):
                     continue
-                log_err("\nline: [%s]" % line)
+                log("\nline: [%s]" % line)
                 code = [i.replace(',', '').strip() for i in line.split()]  # space and ',' are supported
                 instruction = code[0]
                 ops = code[1:]
@@ -51,30 +52,36 @@ class Compiler:
                     coder = self.instruction_set[instruction]
                     func = coder.func
                     no = coder.no
-                    log_err("resolver(%d, %s)" % (no, ops))
+                    log("resolver(%d, %s)" % (no, ops))
                     func(no, ops)
                 else:
-                    log_err("invalid instruction: %s" % instruction, should_exit=True)
+                    log("invalid instruction: %s" % instruction, should_exit=True)
 
             # relocate
             for r in self.relocate_table:
                 if r.label not in self.labels.keys():
-                    log_err("invalid label: %s" % r.label, should_exit=True)
-                addr = 4 * (self.labels[r.label] - r.pc if r.relative_addr else self.labels[r.label])
+                    log("invalid label: %s" % r.label, should_exit=True)
+                addr = 4 * (self.labels[r.label] if r.abs else self.labels[r.label] - r.pc)
                 ins = self.make_instruction(self.instruction_set[r.op].no, r.tr)
                 ins[2:4] = addr.to_bytes(2, 'little', signed=True)
                 code = int.from_bytes(ins, 'little')
                 self.output_buffer[r.pc] = code  # relocate and overwrite
-                log_err("relocate pc=%d (label=%s on %d) -> code: [%x]" % (r.pc, r.label, self.labels[r.label], code))
+                log("relocate pc=%d (label=%s on %d) -> code: [0x%x]" % (r.pc, r.label, self.labels[r.label], code))
 
             # written in stdout
             if std_out:
                 of = os.fdopen(sys.stdout.fileno(), "wb")
                 assert of
                 for i in range(0, self.pc):
+                    log('write output %s' % self.output_buffer[i].to_bytes(4, 'little', signed=False))
                     of.write(self.output_buffer[i].to_bytes(4, 'little', signed=False))
+            else:
+                with open('./asm.o', 'wb') as of:
+                    for i in range(0, self.pc):
+                        log('write output %s' % self.output_buffer[i].to_bytes(4, 'little', signed=False))
+                        of.write(self.output_buffer[i].to_bytes(4, 'little', signed=False))
 
-                log_err("success!")
+            log("success!")
 
     @staticmethod
     def make_instruction(op, tr) -> bytearray:
@@ -89,9 +96,9 @@ class Compiler:
         if is_target:
             min_no = 1  # r[0] can not use as target
         tr = int(no[1:])
-        log_err("target register is r[%d]" % tr)
+        log("target register is r[%d]" % tr)
         if tr < min_no or tr > 12:
-            log_err("bad register id = %s" % tr, should_exit=True)
+            log("bad register id = %s" % tr, should_exit=True)
         return tr
 
     @staticmethod
@@ -99,7 +106,7 @@ class Compiler:
         immediate_number = int(im, base=0)
         # range of signed 16bit number
         if immediate_number < -32768 or immediate_number > 32767:
-            log_err("bad immediate number %s" % im, should_exit=True)
+            log("bad immediate number %s" % im, should_exit=True)
         return immediate_number
 
     def pc_next(self):
@@ -108,7 +115,7 @@ class Compiler:
 
     # add to compilation result
     def append_output(self, bytecode: int):
-        log_err(f'pc = 0x{self.pc:02x} code -> {bytecode}')
+        log(f'pc = 0x{self.pc:02x} code -> {bytecode}')
         self.output_buffer.append(bytecode)
         self.pc_next()
 
@@ -117,17 +124,17 @@ class Compiler:
         ins = self.make_instruction(op, tr)
         ins[2], ins[3] = sr1, sr2
         code = int.from_bytes(ins, 'little')  # little endian
-        log_err("(pc=%x) [%d, %d, %d, %d] -> code: [%x]" % (self.pc, op, tr, sr1, sr2, code))
+        log("(pc=%x) [%d, %d, %d, %d] -> code: [%x]" % (self.pc, op, tr, sr1, sr2, code))
         self.append_output(code)
         return self
 
     # [operation, target_register, immediate_number(2B)]
     def make_instruction_3(self, op: int, tr: int, im: int):
         ins = self.make_instruction(op, tr)
-        immediate_number = im.to_bytes(2, 'little', signed=True)
+        immediate_number = im.to_bytes(2, 'little', signed=False)
         ins[2:4] = immediate_number
         code = int.from_bytes(ins, 'little')  # little endian
-        log_err("(pc=%x) [%d, %d, %d] -> code: [%x] " % (self.pc, op, tr, im, code))
+        log("(pc=%x) [%d, %d, %d] -> code: [%x] " % (self.pc, op, tr, im, code))
         self.append_output(code)
         return self
 
@@ -171,7 +178,7 @@ class Compiler:
         for i in ops:
             number = int(i, 0)
             if number < -2147483648 or number > 2147483647:
-                log_err("number %d exceed" % number, should_exit=True)
+                log("number %d exceed" % number, should_exit=True)
             self.append_output(number)
 
     # e.g. label loop
@@ -182,21 +189,20 @@ class Compiler:
     # e.g. jnzl loop
     def jnzl_resolver(self, no: int, ops: list):
         label = ops[0]
-        vec = relocate_vec(pc=self.pc, op='jnz', tr=0, label=label, relative_addr=True)
+        vec = relocate_vec(pc=self.pc, op='jnz', tr=0, label=label, abs=False)
         self.make_relocate(vec)
 
     # e.g. movil r1 name
     def movil_resolver(self, no: int, ops: list):
         tr = self.get_register_no(ops[0], is_target=True)
         label = ops[1]
-        vec = relocate_vec(pc=self.pc, op='movi', tr=tr, label=label, relative_addr=False)
+        vec = relocate_vec(pc=self.pc, op='movi', tr=tr, label=label, abs=True)
         self.make_relocate(vec)
 
 
 if __name__ == '__main__':
-    # if len(sys.argv) != 2:
-    #     log_err("usage: %s <input.s>" % (sys.argv[0]), should_exit=True)
-    # file_path = sys.argv[1]
-    file_path = "../tests/resource/asm_code.s"
+    if len(sys.argv) != 2:
+        log("usage: %s <input.s>" % (sys.argv[0]), should_exit=True)
+    file_path = sys.argv[1]
     compiler = Compiler()
-    compiler(file_path)
+    compiler(file_path, std_out=False)
