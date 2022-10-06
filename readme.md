@@ -10,7 +10,12 @@ to see the instructions, goto `./assembler/readme.md`
 
 ## how to run/test
 
-see `./Makefile`
+> see `./Makefile`
+
+- on linux: run `make test` (with python3 installed) 
+- on windows:
+  - run ` python ./assembler/assembler.py ./tests/resource/asm_code.s ./tests/resource/asm_code.o`
+  - then run `python ./cpu/cpu.py ./tests/resource/asm_code.o`
 
 ### example code and result
 
