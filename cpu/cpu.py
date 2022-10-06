@@ -24,6 +24,7 @@ class Cpu:
             self._comi,
             self._jnz,
             self._halt,
+            self._add,
         ]
 
     # load program (file after assembler compilation)
@@ -31,7 +32,7 @@ class Cpu:
         with open(path, 'rb') as f:
             code = bytearray(f.read())
             self.memory[0:len(code)] = code
-            log("memory size = %d" % len(self.memory))
+            log("memory size = %dB" % len(self.memory))
             if len(self.memory) > self.memory_range[1]:
                 raise RuntimeError('memory limit exceed')
 
@@ -110,6 +111,13 @@ class Cpu:
     def _halt(self, ins: list):
         log('cpu halt')
         sys.exit(0)
+
+    def _add(self, ins: list):
+        tr = ins[1]
+        immediate_number = int.from_bytes(ins[2:4], 'little', signed=True)
+        self.register[tr] += immediate_number
+        log("r%d += %d = %d" % (tr, immediate_number, self.register[tr]))
+        self.pc_next()
 
 
 if __name__ == '__main__':

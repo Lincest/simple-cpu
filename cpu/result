@@ -5,11 +5,11 @@ mov imme = 40 to r2
 load from memory[r2 = 0x28] = 0x14 (20) -> r4
 store from r4 = 0x14 (20) to memory[r3 = 0x1000]
 load from memory[r3 = 0x1000] = 0x14 (20) -> r5
-r2 += 1 = 41
+r2 += 4 = 44
 compare r5 = 20 with 20, now r15 = 0x0
-load from memory[r2 = 0x29] = 0x1e000000 (503316480) -> r4
-store from r4 = 0x1e000000 (503316480) to memory[r3 = 0x1000]
-load from memory[r3 = 0x1000] = 0x1e000000 (503316480) -> r5
-r2 += 1 = 42
-compare r5 = 503316480 with 20, now r15 = 0x1
+load from memory[r2 = 0x2c] = 0x1e (30) -> r4
+store from r4 = 0x1e (30) to memory[r3 = 0x1000]
+load from memory[r3 = 0x1000] = 0x1e (30) -> r5
+r2 += 4 = 48
+compare r5 = 30 with 20, now r15 = 0x1
 cpu halt

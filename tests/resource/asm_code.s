@@ -9,10 +9,10 @@ load r4, r2
 store r3, r4
 # load memory[r3] to r5
 load r5, r3
-# r2 += 1
-inc r2
+# r2 += 4
+add r2, 4
 # compare r4's value with number 20
-cmpi r5, 20
+cmpi r5, 20 
 # jump if not equal
 jnzl loop
 # program ends

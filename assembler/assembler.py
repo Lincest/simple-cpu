@@ -30,6 +30,7 @@ class Compiler:
             'cmpi': op_coder(5, self.tr_im_resolver),
             'jnz': op_coder(6, self.nop_im_resolver),
             'halt': op_coder(7, self.nop_resolver),
+            'add': op_coder(8, self.tr_im_resolver),
             # pseudo
             'data': op_coder(-1, self.data_resolver),
             'label': op_coder(-1, self.label_resolver),

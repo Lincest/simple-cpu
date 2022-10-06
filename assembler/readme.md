@@ -29,6 +29,7 @@
 | `cmpi`      | `cmpi r1 1234` compare r1's data with 1234                   |
 | `jnz`       | `jnz 0x12` jump to offset 0x12 (addr: current_addr + offset 0x12) if not zero |
 | `halt`      | pause the cpu                                                |
+| `add`       | `add r1, 4` r1's data += 4                                   |
 
 ### encoding of instruction
 
