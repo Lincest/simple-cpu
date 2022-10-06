@@ -167,8 +167,12 @@ class Compiler:
 
     # e.g. data 0x23 0x35 0x1234 1223 -7766 ...
     def data_resolver(self, no: int, ops: list):
+        # 32 bit limit
         for i in ops:
-            self.append_output(int(i, 0))  # fixme: how to/should we keep little endian
+            number = int(i, 0)
+            if number < -2147483648 or number > 2147483647:
+                log_err("number %d exceed" % number, should_exit=True)
+            self.append_output(number)
 
     # e.g. label loop
     def label_resolver(self, no: int, ops: list):

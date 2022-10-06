@@ -15,3 +15,10 @@ class TestAssembler(unittest.TestCase):
         self.compiler('./resource/test_load.s', std_out=False)
         ans = self.check_output()
         self.assertEqual(ans[0], b'\x01\x01\x02\x00')
+
+    def test_endian(self):
+        im = 1245
+        bt = im.to_bytes(4, 'little', signed=True)
+        b = int.from_bytes(bt, 'little')
+        print('number = %d, b = %d', (im, b))
+        self.assertEqual(im, b)
