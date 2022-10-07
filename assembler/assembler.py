@@ -117,7 +117,7 @@ class Compiler:
     def make_instruction_4(self, op: int, tr: int, sr1: int, sr2: int):
         ins = self.make_instruction(op, tr)
         ins[2], ins[3] = sr1, sr2
-        code = int.from_bytes(ins, 'little')  # little endian
+        code = int.from_bytes(ins, 'little', signed=False)  # little endian
         log("(pc=%x) [%d, %d, %d, %d] -> code: [%x]" % (self.pc, op, tr, sr1, sr2, code))
         self.append_output(code)
         return self
@@ -125,9 +125,9 @@ class Compiler:
     # [operation, target_register, immediate_number(2B)]
     def make_instruction_3(self, op: int, tr: int, im: int):
         ins = self.make_instruction(op, tr)
-        immediate_number = im.to_bytes(2, 'little', signed=False)
+        immediate_number = im.to_bytes(2, 'little', signed=True)
         ins[2:4] = immediate_number
-        code = int.from_bytes(ins, 'little')  # little endian
+        code = int.from_bytes(ins, 'little', signed=False)  # little endian
         log("(pc=%x) [%d, %d, %d] -> code: [%x] " % (self.pc, op, tr, im, code))
         self.append_output(code)
         return self
@@ -173,7 +173,9 @@ class Compiler:
             number = int(i, 0)
             if number < -2147483648 or number > 2147483647:
                 log("number %d exceed" % number, should_exit=True)
-            self.append_output(number)
+            # to 32bit unsigned
+            number_unsigned = int.from_bytes(number.to_bytes(4, 'little', signed=True), 'little', signed=False)
+            self.append_output(number_unsigned)
 
     # e.g. label loop
     def label_resolver(self, no: int, ops: list):

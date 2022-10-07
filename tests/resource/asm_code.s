@@ -11,14 +11,14 @@ store r3, r4
 load r5, r3
 # r2 += 4
 add r2, 4
-# compare r4's value with number 20
-cmpi r5, 20 
+# compare r4's value with number -30
+cmpi r5, -0x1234
 # jump if not equal
 jnzl loop
 # program ends
 halt
 
 label data_addr
-data 20 30 40
-data 0x1234 0xfeff
-data 0x123456ff
+data -55 -30 40
+data 0x1234 0x123456ff
+data -0x1234

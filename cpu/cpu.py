@@ -71,7 +71,7 @@ class Cpu:
             log("segment fault, address = 0x%x" % address, should_exit=True)
 
         data = self.memory[address:address+4]
-        self.register[tr] = int.from_bytes(data, 'little', signed=False)
+        self.register[tr] = int.from_bytes(data, 'little', signed=True)
         log("load from memory[r%d = 0x%x] = 0x%x (%d) -> r%d" % (sr, address, self.register[tr], self.register[tr], tr))
         self.pc_next()
 
@@ -85,7 +85,7 @@ class Cpu:
     def _store(self, ins: list):
         tr, sr = ins[1], ins[2]
         address = self.register[tr]
-        data = self.register[sr].to_bytes(4, 'little', signed=False)
+        data = self.register[sr].to_bytes(4, 'little', signed=True)
         self.memory[address:address+4] = data
         log("store from r%d = 0x%x (%d) to memory[r%d = 0x%x]" % (sr, self.register[sr], self.register[sr], tr, address))
         self.pc_next()
@@ -99,13 +99,15 @@ class Cpu:
     def _comi(self, ins: list):
         tr = ins[1]
         immediate_number = int.from_bytes(ins[2:4], 'little', signed=True)
+        # if equal set 0, not equal set 1
         self.state = 0x0 if self.register[tr] == immediate_number else 0x1
         log("compare r%d = %d with %d, now r15 = 0x%x" % (tr, self.register[tr], immediate_number, self.state))
         self.pc_next()
 
     def _jnz(self, ins: list):
         immediate_number = int.from_bytes(ins[2:4], 'little', signed=True)
-        offset = 4 if self.state & 0x1 else immediate_number
+        # if equal next, else jump
+        offset = 4 if not (self.state & 0x1) else immediate_number
         self.pc += offset
 
     def _halt(self, ins: list):
